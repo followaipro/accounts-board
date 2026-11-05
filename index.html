@@ -1,0 +1,1007 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kleinanzeigen · Доска и база аккаунтов</title>
+<style>
+:root{
+  color-scheme:light;
+  font-family:Inter,Segoe UI,Arial,sans-serif;
+  color:#23332d;
+  background:#f3f5f1;
+}
+*{box-sizing:border-box}
+body{margin:0}
+main{max-width:1260px;margin:auto;padding:45px 25px}
+header{display:flex;justify-content:space-between;gap:24px;align-items:center;margin-bottom:28px;flex-wrap:wrap}
+.eyebrow{font-size:12px;letter-spacing:2px;color:#68816f;text-transform:uppercase;font-weight:600}
+h1{font-size:36px;letter-spacing:-1.2px;margin:6px 0}
+p{color:#728077;line-height:1.5}
+button,input,textarea,select{font:inherit}
+button{cursor:pointer;border:1px solid #d9e1d8;border-radius:10px;padding:10px 16px;background:white;color:#31473a;transition:all .15s ease}
+button:hover{background:#e9efe7}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid #91bda5;outline-offset:3px}
+.primary{background:#285d46;color:white;border-color:#285d46}
+.primary:hover{background:#1e4c38}
+
+/* Tabs */
+.tabs{display:flex;gap:8px;margin-bottom:24px;border-bottom:1px solid #d9e1d8;padding-bottom:12px}
+.tabs button{display:flex;align-items:center;gap:9px;background:transparent;border-color:transparent;font-weight:500;padding:8px 16px;border-radius:8px}
+.tabs button[aria-selected="true"]{background:#285d46;color:white;border-color:#285d46}
+.tabs .tab-count{font-size:11px;background:#ffffff26;padding:3px 7px;border-radius:6px}
+.tabs button[aria-selected="false"] .tab-count{background:#e4eae0}
+[hidden]{display:none!important}
+
+/* Board */
+.board{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
+.column{background:#e9eee7;border:1px solid #dfe5dc;border-radius:18px;padding:18px;min-height:380px}
+.column.over{outline:2px dashed #6a9980}
+.colhead{display:flex;align-items:center;gap:9px;margin:2px 0 20px;font-weight:600;font-size:14px}
+.dot{height:8px;width:8px;border-radius:50%;background:#8d9c90}
+.column[data-status="doing"] .dot{background:#c49a47}
+.column[data-status="done"] .dot{background:#4f936b}
+.count{margin-left:auto;border-radius:6px;background:#dce4d8;padding:3px 7px;font-size:12px;color:#63745f}
+.card{border:1px solid #e2e6df;background:white;border-radius:13px;padding:18px;margin-bottom:12px;box-shadow:0 3px 8px #253b2510}
+.card[draggable="true"]{cursor:grab}
+.card h2{font-size:15px;line-height:1.5;font-weight:600;margin:0 0 12px;white-space:pre-wrap;overflow-wrap:anywhere}
+.tag{display:inline-block;font-size:11px;color:#5e765e;background:#eff3eb;padding:3px 7px;border-radius:5px;margin-bottom:10px}
+.actions{display:flex;align-items:center;gap:5px;margin-top:14px;border-top:1px solid #eff1ed;padding-top:10px}
+.actions select{min-width:0;flex:1;border:1px solid #dce4d8;border-radius:7px;padding:6px;background:#fafcf8;color:#596e5e;font-size:12px}
+.icon{font-size:14px;border:0;padding:6px 9px;background:transparent}
+.empty{font-size:13px;text-align:center;color:#889587;border:1px dashed #cbd6c6;border-radius:10px;padding:24px 8px}
+.footer{font-size:12px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:24px;color:#788578}
+.footer p{margin:0}
+.tools{display:flex;gap:8px;align-items:center}
+.tools button{font-size:12px;padding:7px 10px}
+
+/* Accounts Toolbar & Filters */
+.account-toolbar{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;margin-bottom:20px;flex-wrap:wrap}
+.account-toolbar h2{font-size:24px;letter-spacing:-.6px;margin:0 0 4px}
+.account-toolbar p{font-size:13px;margin:0}
+.search-field{width:min(100%,320px)}
+.search-field label{color:#63745f;font-size:11px;display:block;margin-bottom:5px;font-weight:600}
+.search-field input{width:100%;border:1px solid #cfdacb;border-radius:9px;background:white;padding:10px 12px;color:#23332d;font-size:13px}
+
+/* Filter bar & stats */
+.stats-bar{display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap;align-items:center}
+.filter-btn{font-size:12px;padding:6px 12px;border-radius:20px;border:1px solid #dfe5dc;background:#eef2ec;color:#495f50;font-weight:500;display:inline-flex;align-items:center;gap:6px}
+.filter-btn:hover{background:#e2e9df}
+.filter-btn.active{background:#285d46;color:white;border-color:#285d46}
+.filter-badge{background:rgba(0,0,0,0.08);padding:1px 6px;border-radius:10px;font-size:10px}
+.filter-btn.active .filter-badge{background:rgba(255,255,255,0.25)}
+
+/* Account Cards Grid */
+.account-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+.account-card{background:#fff;border:1px solid #dfe5dc;border-radius:16px;padding:20px;box-shadow:0 3px 8px #253b2508;min-width:0;display:flex;flex-direction:column;gap:12px}
+.account-heading{display:flex;align-items:center;gap:12px;justify-content:space-between}
+.account-user{display:flex;align-items:center;gap:10px;min-width:0}
+.account-number{display:grid;place-items:center;flex-shrink:0;width:34px;height:34px;border-radius:10px;background:#eaf0e6;color:#4f705b;font-size:12px;font-weight:700}
+.account-heading h3{font-size:15px;line-height:1.3;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.account-heading p{font-size:11px;margin:2px 0 0;color:#7a897c}
+
+/* Status selection & Badges */
+.status-row{display:flex;align-items:center;gap:8px;margin-top:2px}
+.status-select{flex:1;border:1px solid #cfdacb;border-radius:8px;padding:7px 9px;font-size:12px;font-weight:600;background:#fafcf8;cursor:pointer}
+.status-pill{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:600;padding:4px 9px;border-radius:6px;white-space:nowrap}
+
+/* Status themes */
+.st-new{background:#eef2ec;color:#5a6d5c;border:1px solid #dce4d8}
+.st-reg{background:#e0f2fe;color:#0284c7;border:1px solid #bae6fd}
+.st-registered{background:#fef3c7;color:#b45309;border:1px solid #fde68a}
+.st-posted{background:#ede9fe;color:#7c3aed;border:1px solid #ddd6fe}
+.st-cooldown{background:#dcfce7;color:#16a34a;border:1px solid #bbf7d0}
+.st-ready{background:#059669;color:#ffffff;border:1px solid #047857}
+.st-banned{background:#fee2e2;color:#dc2626;border:1px solid #fecaca}
+.st-error{background:#ffedd5;color:#ea580c;border:1px solid #fed7aa}
+
+/* Cooldown Timer Box */
+.cooldown-box{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:9px;padding:9px 12px;font-size:12px;color:#166534}
+.cooldown-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;font-weight:600}
+.cooldown-time{font-family:Consolas,monospace;font-size:13px;font-weight:700;color:#15803d}
+.cooldown-targets{display:flex;gap:6px;font-size:10px;margin-top:4px}
+.cooldown-tag{background:#dcfce7;border:1px solid #86efac;padding:2px 6px;border-radius:4px;font-weight:600}
+.cooldown-tag.done{background:#22c55e;color:white;border-color:#16a34a}
+.cooldown-reset-btn{border:none;background:none;color:#166534;font-size:10px;text-decoration:underline;padding:0;cursor:pointer}
+.cooldown-reset-btn:hover{color:#14532d}
+
+/* Account Fields */
+.account-field{margin-top:4px}
+.account-field>label{font-size:10.5px;color:#718275;margin-bottom:4px;display:block;font-weight:600;text-transform:uppercase;letter-spacing:.3px}
+.account-field-row{display:flex;align-items:center;gap:5px}
+.account-value{flex:1;min-width:0;width:100%;border:1px solid #e3e9df;border-radius:7px;background:#f7f9f5;color:#31473a;padding:8px 9px;font-size:12px;font-family:Consolas,monospace}
+.account-field-row button{padding:6px 8px;font-size:11px;border-color:#e3e9df;flex-shrink:0}
+.account-note{width:100%;border:1px solid #e3e9df;border-radius:7px;background:#fafcf8;color:#31473a;padding:6px 8px;font-size:11px;resize:vertical;min-height:38px}
+
+.account-copy-all{margin-top:6px;width:100%;font-size:12px;background:#f0f4ed;border-color:#e3e9df;font-weight:500}
+.account-empty{grid-column:1/-1;padding:40px}
+
+/* Auth / Lock Screen */
+.auth-overlay{
+  position:fixed;
+  inset:0;
+  background:#f3f5f1;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+  z-index:9999;
+}
+.auth-card{
+  background:white;
+  border:1px solid #dfe5dc;
+  border-radius:20px;
+  padding:36px 30px;
+  max-width:390px;
+  width:100%;
+  box-shadow:0 10px 30px rgba(37,59,37,0.08);
+  text-align:center;
+}
+.auth-icon{font-size:38px;margin-bottom:12px}
+.auth-card h2{font-size:22px;margin:0 0 8px;color:#23332d}
+.auth-card p{font-size:13px;color:#728077;margin:0 0 22px;line-height:1.4}
+.auth-field{position:relative;display:flex;align-items:center;margin-bottom:12px}
+.auth-field input{
+  width:100%;
+  padding:12px 42px 12px 14px;
+  border:1px solid #cfdacb;
+  border-radius:10px;
+  font-size:14px;
+  color:#23332d;
+  background:#fafcf8;
+}
+.auth-field button{
+  position:absolute;
+  right:8px;
+  background:transparent;
+  border:none;
+  font-size:16px;
+  cursor:pointer;
+  padding:4px;
+  color:#728077;
+}
+.auth-error{
+  color:#dc2626;
+  font-size:12px;
+  margin-bottom:12px;
+  text-align:left;
+}
+.auth-submit{
+  width:100%;
+  padding:12px;
+  font-size:14px;
+  font-weight:600;
+  border-radius:10px;
+}
+
+/* Toast & Dialog */
+.copy-toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);padding:11px 18px;border-radius:10px;background:#285d46;color:#fff;box-shadow:0 8px 24px #15271b33;font-size:13px;z-index:20;text-align:center}
+dialog{border:1px solid #dbe4d6;border-radius:18px;width:min(480px,calc(100% - 36px));padding:26px;color:#23332d}
+dialog::backdrop{background:#15271b66}
+dialog h2{font-size:22px;margin:0 0 20px}
+label{display:block;font-size:13px;margin-bottom:8px}
+textarea{width:100%;min-height:120px;resize:vertical;border:1px solid #cfdacb;border-radius:9px;padding:12px;color:#23332d}
+.dialog-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}
+.notice{color:#a06024!important}
+
+@media(max-width:1080px){.account-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:680px){
+  .account-toolbar{flex-direction:column;align-items:stretch}
+  .search-field{width:100%}
+  .account-grid{grid-template-columns:1fr}
+  .board{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- Экран авторизации (AES-256 расшифровка) -->
+<div id="auth-overlay" class="auth-overlay">
+  <div class="auth-card">
+    <div class="auth-icon">🔐</div>
+    <h2>Доступ ограничен</h2>
+    <p>Введите пароль для расшифровки и входа в панель Kleinanzeigen</p>
+    <form id="auth-form">
+      <div class="auth-field">
+        <input type="password" id="auth-pass" placeholder="Пароль…" autocomplete="current-password" autofocus required>
+        <button type="button" id="auth-reveal" title="Показать/скрыть пароль">👁</button>
+      </div>
+      <div id="auth-error" class="auth-error" hidden>Неверный пароль расшифровки. Попробуйте еще раз.</div>
+      <button type="submit" class="primary auth-submit" id="auth-btn">Войти в панель</button>
+    </form>
+  </div>
+</div>
+
+<main id="app-main" hidden>
+  <header>
+    <div>
+      <div class="eyebrow">Рабочая панель управления</div>
+      <h1>Моя доска и аккаунты</h1>
+      <p>План задач, учет аккаунтов Kleinanzeigen, статусы и контроль отлёжки.</p>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center;">
+      <button class="primary" id="add">＋ Задача</button>
+      <button id="lock-btn" title="Заблокировать страницу" style="font-size:12px;padding:9px 12px;">🔒 Заблокировать</button>
+    </div>
+  </header>
+
+  <div class="tabs" role="tablist" aria-label="Разделы доски">
+    <button id="plan-tab" type="button" role="tab" aria-selected="false" aria-controls="plan-panel" tabindex="-1">План</button>
+    <button id="accounts-tab" type="button" role="tab" aria-selected="true" aria-controls="accounts-panel">Аккаунты <span class="tab-count" id="tab-total-count">20</span></button>
+  </div>
+
+  <!-- Вкладка задач -->
+  <section id="plan-panel" role="tabpanel" aria-labelledby="plan-tab" hidden>
+    <div class="board" id="board" aria-label="Доска задач"></div>
+    <div class="footer">
+      <p id="save-state" role="status">Изменения сохраняются в браузере. Для переноса используй экспорт.</p>
+      <div class="tools">
+        <button id="export">Экспорт всего</button>
+        <button id="import">Импорт</button>
+        <input id="import-file" type="file" accept="application/json,.json" hidden>
+      </div>
+    </div>
+  </section>
+
+  <!-- Вкладка аккаунтов -->
+  <section id="accounts-panel" role="tabpanel" aria-labelledby="accounts-tab">
+    <div class="account-toolbar">
+      <div>
+        <h2>Kleinanzeigen · База аккаунтов</h2>
+        <p id="account-results" role="status">20 аккаунтов freenet.de</p>
+      </div>
+      <div class="search-field">
+        <label for="account-search">Поиск аккаунта</label>
+        <input id="account-search" type="search" placeholder="Имя, почта, телефон или Ad ID…" autocomplete="off" spellcheck="false">
+      </div>
+    </div>
+
+    <!-- Фильтры по статусам -->
+    <div class="stats-bar" id="status-filters"></div>
+
+    <!-- Сетка аккаунтов -->
+    <div id="account-grid" class="account-grid"></div>
+
+    <div class="footer">
+      <p>Данные статусов, телефонов и заметок сохраняются автоматически в браузере (LocalStorage).</p>
+      <div class="tools">
+        <button id="reset-accounts-btn" style="color:#c2410c">Сбросить доп. данные</button>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div id="copy-toast" class="copy-toast" role="status" hidden></div>
+
+<!-- Диалог создания/редактирования задачи -->
+<dialog id="editor">
+  <form id="task-form">
+    <h2 id="dialog-title">Новая задача</h2>
+    <label for="task-text">Что нужно сделать?</label>
+    <textarea id="task-text" maxlength="3000" required placeholder="Напиши задачу…"></textarea>
+    <div class="dialog-actions">
+      <button type="button" id="cancel">Отмена</button>
+      <button type="submit" class="primary">Сохранить</button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+'use strict';
+
+// 1. ЗАШИФРОВАННОЕ ХРАНИЛИЩЕ (AES-256-GCM)
+const ENCRYPTED_VAULT = {"salt": "zPRfRa8e1rE5SnDIypISmw==", "iv": "8qBvnN7mXfwwn/oJ", "data": "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"};
+
+const AUTH_KEY = 'vadim-board-auth-token-v3';
+const CACHED_PAYLOAD_KEY = 'vadim-cached-payload-v3';
+const keyTasks = 'vadim-personal-plan-board-v1';
+const keyAccDetails = 'vadim-account-details-v3';
+const columns = [['todo','Запланировано'],['doing','В работе'],['done','Готово']];
+
+let tasks = [];
+let accounts = [];
+let accountData = {};
+let activeFilter = 'all';
+
+// Web Crypto Helpers
+async function deriveKey(password, saltB64) {
+  const enc = new TextEncoder();
+  const salt = Uint8Array.from(atob(saltB64), c => c.charCodeAt(0));
+  const keyMaterial = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveKey']);
+  return crypto.subtle.deriveKey(
+    { name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' },
+    keyMaterial,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['decrypt']
+  );
+}
+
+async function decryptVault(password) {
+  try {
+    const key = await deriveKey(password, ENCRYPTED_VAULT.salt);
+    const iv = Uint8Array.from(atob(ENCRYPTED_VAULT.iv), c => c.charCodeAt(0));
+    const ct = Uint8Array.from(atob(ENCRYPTED_VAULT.data), c => c.charCodeAt(0));
+    const decrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ct);
+    const jsonStr = new TextDecoder().decode(decrypted);
+    return JSON.parse(jsonStr);
+  } catch(e) {
+    return null;
+  }
+}
+
+async function tryUnlock(pass) {
+  const btn = document.getElementById('auth-btn');
+  btn.textContent = 'Расшифровка…';
+  btn.disabled = true;
+
+  const payload = await decryptVault(pass);
+  btn.textContent = 'Войти в панель';
+  btn.disabled = false;
+
+  if(!payload) {
+    const err = document.getElementById('auth-error');
+    err.hidden = false;
+    const inp = document.getElementById('auth-pass');
+    inp.style.borderColor = '#dc2626';
+    inp.focus();
+    inp.select();
+    return false;
+  }
+
+  // Успешный вход
+  localStorage.setItem(AUTH_KEY, 'granted');
+  localStorage.setItem(CACHED_PAYLOAD_KEY, JSON.stringify(payload));
+  bootstrap(payload);
+  document.getElementById('auth-overlay').hidden = true;
+  document.getElementById('app-main').hidden = false;
+  return true;
+}
+
+document.getElementById('auth-form').onsubmit = async e => {
+  e.preventDefault();
+  const pass = (document.getElementById('auth-pass').value || '').trim();
+  await tryUnlock(pass);
+};
+
+document.getElementById('auth-reveal').onclick = () => {
+  const inp = document.getElementById('auth-pass');
+  inp.type = (inp.type === 'password' ? 'text' : 'password');
+};
+
+document.getElementById('lock-btn').onclick = () => {
+  localStorage.removeItem(AUTH_KEY);
+  localStorage.removeItem(CACHED_PAYLOAD_KEY);
+  document.getElementById('auth-pass').value = '';
+  document.getElementById('auth-error').hidden = true;
+  document.getElementById('auth-overlay').hidden = false;
+  document.getElementById('app-main').hidden = true;
+  document.getElementById('auth-pass').focus();
+};
+
+function bootstrap(payload) {
+  // Инициализация аккаунтов
+  accounts = payload.accountsText.split('\n').map((raw, index) => {
+    const parts = raw.split(':');
+    return { name: parts[0], birthday: parts[1], email: parts[2], password: parts[3], raw, index };
+  });
+
+  // Задачи
+  tasks = payload.tasks;
+  try {
+    const localTasks = localStorage.getItem(keyTasks);
+    if(localTasks) {
+      const parsed = JSON.parse(localTasks);
+      if(Array.isArray(parsed) && parsed.length) tasks = parsed;
+    }
+  } catch(e){}
+
+  // Доп. данные аккаунтов
+  accountData = payload.accountsData || {};
+  try {
+    const localAcc = localStorage.getItem(keyAccDetails);
+    if(localAcc) {
+      const parsed = JSON.parse(localAcc);
+      if(parsed && typeof parsed === 'object') {
+        accountData = Object.assign({}, accountData, parsed);
+      }
+    }
+  } catch(e){}
+
+  saveTasks();
+  saveAccountData();
+  renderTasks();
+  renderFilters();
+  renderAccounts();
+
+  let activeTab = 'accounts';
+  try { activeTab = localStorage.getItem('vadim-personal-plan-active-tab') || 'accounts'; } catch(e){}
+  selectTab(activeTab, false);
+}
+
+// Проверка сохраненной авторизации
+(function checkSavedAuth(){
+  const isAuth = (localStorage.getItem(AUTH_KEY) === 'granted');
+  const cached = localStorage.getItem(CACHED_PAYLOAD_KEY);
+  if(isAuth && cached) {
+    try {
+      const payload = JSON.parse(cached);
+      bootstrap(payload);
+      document.getElementById('auth-overlay').hidden = true;
+      document.getElementById('app-main').hidden = false;
+      return;
+    } catch(e){}
+  }
+  document.getElementById('auth-overlay').hidden = false;
+  document.getElementById('app-main').hidden = true;
+  setTimeout(() => document.getElementById('auth-pass')?.focus(), 150);
+})();
+
+/* --- ОСТАЛЬНАЯ ЛОГИКА ДОСКИ И АККАУНТОВ --- */
+
+const STATUS_DEF = {
+  'new':        { id:'new',        label:'В очереди',        cls:'st-new',        icon:'⚪' },
+  'reg':        { id:'reg',        label:'Регистрация',      cls:'st-reg',        icon:'🔵' },
+  'registered': { id:'registered', label:'Зареган (SMS)',    cls:'st-registered', icon:'🟡' },
+  'posted':     { id:'posted',     label:'Прогрев выложен',  cls:'st-posted',     icon:'🟣' },
+  'cooldown':   { id:'cooldown',   label:'В отлёжке',        cls:'st-cooldown',   icon:'⏳' },
+  'ready':      { id:'ready',      label:'Готов / Отлежался',cls:'st-ready',      icon:'🟢' },
+  'error':      { id:'error',      label:'Ошибка / Проверить',cls:'st-error',     icon:'🟠' },
+  'banned':     { id:'banned',     label:'Бан / Блок',       cls:'st-banned',     icon:'🔴' }
+};
+
+const board = document.getElementById('board'), editor = document.getElementById('editor'), input = document.getElementById('task-text'), notice = document.getElementById('save-state');
+let editing = null, dragged = null;
+
+function saveTasks(){
+  try { localStorage.setItem(keyTasks, JSON.stringify(tasks)); } catch(e){}
+}
+
+function saveAccountData(){
+  try { localStorage.setItem(keyAccDetails, JSON.stringify(accountData)); } catch(e){}
+}
+
+function moveTask(id,status){
+  const t = tasks.find(t=>t.id===id);
+  if(!t) return;
+  t.status = status;
+  saveTasks();
+  renderTasks();
+}
+
+function renderTasks(){
+  board.replaceChildren();
+  for(const [status,label] of columns){
+    const col = document.createElement('section');
+    col.className = 'column';
+    col.dataset.status = status;
+    col.setAttribute('aria-label',label);
+    const head = document.createElement('div');
+    head.className = 'colhead';
+    const dot = document.createElement('span');
+    dot.className = 'dot';
+    const count = document.createElement('span');
+    count.className = 'count';
+    const items = tasks.filter(t=>t.status===status);
+    count.textContent = items.length;
+    head.append(dot, document.createTextNode(label), count);
+    col.append(head);
+
+    for(const t of items){
+      const card = document.createElement('article');
+      card.className = 'card';
+      card.draggable = true;
+      card.ondragstart = e => { dragged=t.id; e.dataTransfer.setData('text/plain',t.id); e.dataTransfer.effectAllowed='move'; };
+      card.ondragend = () => { dragged=null; document.querySelectorAll('.over').forEach(c=>c.classList.remove('over')); };
+      
+      const tag = document.createElement('span');
+      tag.className = 'tag'; tag.textContent = 'Задача';
+      const title = document.createElement('h2');
+      title.textContent = t.text;
+      
+      const actions = document.createElement('div');
+      actions.className = 'actions';
+      const select = document.createElement('select');
+      select.setAttribute('aria-label','Статус задачи: '+t.text);
+      for(const [value,name] of columns){
+        const opt = document.createElement('option');
+        opt.value = value;
+        opt.textContent = name;
+        opt.selected = (value===status);
+        select.append(opt);
+      }
+      select.onchange = () => moveTask(t.id, select.value);
+      
+      const editBtn = document.createElement('button');
+      editBtn.type='button'; editBtn.className='icon'; editBtn.textContent='✎'; editBtn.title='Изменить';
+      editBtn.onclick = () => openEditor(t);
+
+      const delBtn = document.createElement('button');
+      delBtn.type='button'; delBtn.className='icon'; delBtn.textContent='×'; delBtn.title='Удалить';
+      delBtn.onclick = () => { if(confirm('Удалить эту задачу?')){ tasks=tasks.filter(x=>x.id!==t.id); saveTasks(); renderTasks(); } };
+
+      actions.append(select, editBtn, delBtn);
+      card.append(tag, title, actions);
+      col.append(card);
+    }
+
+    if(!items.length){
+      const empty = document.createElement('div');
+      empty.className = 'empty'; empty.textContent = 'Пока нет задач';
+      col.append(empty);
+    }
+
+    col.ondragover = e => { if(dragged){ e.preventDefault(); col.classList.add('over'); } };
+    col.ondragleave = e => { if(!col.contains(e.relatedTarget)) col.classList.remove('over'); };
+    col.ondrop = e => { e.preventDefault(); col.classList.remove('over'); if(dragged) moveTask(dragged, status); };
+    board.append(col);
+  }
+}
+
+function openEditor(t){
+  editing = t ? t.id : null;
+  document.getElementById('dialog-title').textContent = t ? 'Изменить задачу' : 'Новая задача';
+  input.value = t ? t.text : '';
+  editor.showModal();
+  input.focus();
+}
+
+document.getElementById('add').onclick = () => openEditor();
+document.getElementById('cancel').onclick = () => editor.close();
+document.getElementById('task-form').onsubmit = e => {
+  e.preventDefault();
+  const text = input.value.trim();
+  if(!text){ input.value=''; input.reportValidity(); return; }
+  if(editing){
+    const t = tasks.find(t=>t.id===editing);
+    if(t) t.text = text;
+  } else {
+    tasks.push({id: Date.now().toString(36)+'-'+Math.random().toString(36).slice(2), text, status:'todo'});
+  }
+  saveTasks();
+  renderTasks();
+  editor.close();
+};
+
+const accountGrid = document.getElementById('account-grid');
+const accountSearch = document.getElementById('account-search');
+const statusFiltersBar = document.getElementById('status-filters');
+let toastTimer;
+
+function showCopyMessage(msg){
+  const toast = document.getElementById('copy-toast');
+  clearTimeout(toastTimer);
+  toast.textContent = msg;
+  toast.hidden = false;
+  toastTimer = setTimeout(()=>{ toast.hidden = true; }, 2400);
+}
+
+async function copyValue(val, label){
+  try {
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      await navigator.clipboard.writeText(val);
+    } else {
+      const helper = document.createElement('textarea');
+      helper.value = val;
+      helper.style.cssText = 'position:fixed;left:-9999px;top:0';
+      document.body.append(helper);
+      helper.select();
+      document.execCommand('copy');
+      helper.remove();
+    }
+    showCopyMessage(label + ' — скопировано!');
+  } catch(err){
+    showCopyMessage('Не удалось скопировать. Выдели текст вручную.');
+  }
+}
+
+function formatElapsed(ms){
+  const sec = Math.floor(ms / 1000);
+  const min = Math.floor(sec / 60);
+  const hrs = Math.floor(min / 60);
+  const days = Math.floor(hrs / 24);
+  if(days > 0) return days + ' дн. ' + (hrs % 24) + ' ч.';
+  if(hrs > 0) return hrs + ' ч. ' + (min % 60) + ' мин.';
+  return Math.max(1, min) + ' мин.';
+}
+
+function renderFilters(){
+  statusFiltersBar.replaceChildren();
+  const counts = { all: accounts.length };
+  Object.keys(STATUS_DEF).forEach(k => counts[k] = 0);
+
+  accounts.forEach(acc => {
+    const d = accountData[acc.email] || {};
+    const st = d.status || 'new';
+    counts[st] = (counts[st] || 0) + 1;
+  });
+
+  const allBtn = document.createElement('button');
+  allBtn.className = 'filter-btn' + (activeFilter === 'all' ? ' active' : '');
+  allBtn.innerHTML = `Все <span class="filter-badge">${counts.all}</span>`;
+  allBtn.onclick = () => { activeFilter = 'all'; renderAccounts(); renderFilters(); };
+  statusFiltersBar.append(allBtn);
+
+  const filterList = [
+    { id: 'cooldown',   label: '⏳ В отлёжке', count: counts['cooldown'] },
+    { id: 'registered', label: '🟡 Зареганы',  count: counts['registered'] + counts['posted'] + counts['reg'] },
+    { id: 'new',        label: '⚪ В очереди', count: counts['new'] },
+    { id: 'ready',      label: '🟢 Готовы',    count: counts['ready'] },
+    { id: 'issues',     label: '⚠️ Ошибка / Бан', count: counts['error'] + counts['banned'] }
+  ];
+
+  filterList.forEach(item => {
+    const btn = document.createElement('button');
+    btn.className = 'filter-btn' + (activeFilter === item.id ? ' active' : '');
+    btn.innerHTML = `${item.label} <span class="filter-badge">${item.count}</span>`;
+    btn.onclick = () => { activeFilter = item.id; renderAccounts(); renderFilters(); };
+    statusFiltersBar.append(btn);
+  });
+}
+
+function renderAccounts(){
+  const q = accountSearch.value.trim().toLowerCase();
+  
+  const filtered = accounts.filter(acc => {
+    const d = accountData[acc.email] || {};
+    const st = d.status || 'new';
+
+    if(activeFilter === 'cooldown' && st !== 'cooldown') return false;
+    if(activeFilter === 'registered' && !['registered', 'posted', 'reg'].includes(st)) return false;
+    if(activeFilter === 'new' && st !== 'new') return false;
+    if(activeFilter === 'ready' && st !== 'ready') return false;
+    if(activeFilter === 'issues' && !['error', 'banned'].includes(st)) return false;
+
+    if(q) {
+      const matchText = [
+        acc.name,
+        acc.birthday,
+        acc.email,
+        d.phone || '',
+        d.adId || '',
+        d.note || '',
+        STATUS_DEF[st]?.label || ''
+      ].join(' ').toLowerCase();
+      if(!matchText.includes(q)) return false;
+    }
+    return true;
+  });
+
+  document.getElementById('account-results').textContent = 
+    q || activeFilter !== 'all' 
+      ? `Показано: ${filtered.length} из ${accounts.length} аккаунтов`
+      : `${accounts.length} аккаунтов freenet.de`;
+
+  accountGrid.replaceChildren();
+
+  filtered.forEach(account => {
+    const d = accountData[account.email] || { status: 'new' };
+    const curStatus = d.status || 'new';
+    const stInfo = STATUS_DEF[curStatus] || STATUS_DEF['new'];
+
+    const card = document.createElement('article');
+    card.className = 'account-card';
+
+    // Заголовок
+    const heading = document.createElement('div');
+    heading.className = 'account-heading';
+    
+    const userBlock = document.createElement('div');
+    userBlock.className = 'account-user';
+    const num = document.createElement('span');
+    num.className = 'account-number';
+    num.textContent = String(account.index + 1).padStart(2,'0');
+
+    const info = document.createElement('div');
+    const nameEl = document.createElement('h3');
+    nameEl.textContent = account.name;
+    const provEl = document.createElement('p');
+    provEl.textContent = 'FREENET.DE · ' + account.birthday;
+    info.append(nameEl, provEl);
+    userBlock.append(num, info);
+
+    const pill = document.createElement('span');
+    pill.className = `status-pill ${stInfo.cls}`;
+    pill.textContent = `${stInfo.icon} ${stInfo.label}`;
+
+    heading.append(userBlock, pill);
+    card.append(heading);
+
+    // Селектор статуса
+    const statusRow = document.createElement('div');
+    statusRow.className = 'status-row';
+    const statusSelect = document.createElement('select');
+    statusSelect.className = 'status-select';
+    statusSelect.setAttribute('aria-label', 'Сменить статус: ' + account.name);
+
+    Object.values(STATUS_DEF).forEach(def => {
+      const opt = document.createElement('option');
+      opt.value = def.id;
+      opt.textContent = `${def.icon} ${def.label}`;
+      opt.selected = (def.id === curStatus);
+      statusSelect.append(opt);
+    });
+
+    statusSelect.onchange = () => {
+      const nextSt = statusSelect.value;
+      if(!accountData[account.email]) accountData[account.email] = {};
+      accountData[account.email].status = nextSt;
+      
+      if(nextSt === 'cooldown' && !accountData[account.email].cooldownStarted) {
+        accountData[account.email].cooldownStarted = Date.now();
+      }
+      saveAccountData();
+      renderFilters();
+      renderAccounts();
+    };
+    statusRow.append(statusSelect);
+    card.append(statusRow);
+
+    // Таймер отлёжки
+    if(curStatus === 'cooldown') {
+      const startMs = d.cooldownStarted || Date.now();
+      const elapsedMs = Math.max(0, Date.now() - startMs);
+      const is24Passed = elapsedMs >= 24 * 3600 * 1000;
+      const is14dPassed = elapsedMs >= 14 * 24 * 3600 * 1000;
+
+      const cBox = document.createElement('div');
+      cBox.className = 'cooldown-box';
+      
+      const cHead = document.createElement('div');
+      cHead.className = 'cooldown-header';
+      cHead.innerHTML = `<span>⏳ В отлёжке:</span> <span class="cooldown-time">${formatElapsed(elapsedMs)}</span>`;
+      
+      const cTargets = document.createElement('div');
+      cTargets.className = 'cooldown-targets';
+      cTargets.innerHTML = `
+        <span class="cooldown-tag ${is24Passed ? 'done' : ''}">${is24Passed ? '✓ 24ч (Топ)' : 'До 24ч: ' + formatElapsed(24*3600*1000 - elapsedMs)}</span>
+        <span class="cooldown-tag ${is14dPassed ? 'done' : ''}">${is14dPassed ? '✓ 14 дней' : 'До 14дн: ' + Math.ceil((14*86400000 - elapsedMs)/(86400000)) + ' дн.'}</span>
+        <button type="button" class="cooldown-reset-btn" title="Сбросить отсчет на сейчас">Сбросить старт</button>
+      `;
+
+      cTargets.querySelector('.cooldown-reset-btn').onclick = () => {
+        if(confirm('Сбросить таймер отлёжки на текущее время?')){
+          accountData[account.email].cooldownStarted = Date.now();
+          saveAccountData();
+          renderAccounts();
+        }
+      };
+
+      cBox.append(cHead, cTargets);
+      card.append(cBox);
+    }
+
+    // Почта
+    const mailField = createFieldRow('Почта', account.email, 'email', true);
+    // Пароль
+    const passField = createFieldRow('Пароль (с !)', account.password, 'password', true, true);
+    card.append(mailField, passField);
+
+    // Телефон
+    const phoneRow = document.createElement('div');
+    phoneRow.className = 'account-field';
+    const phoneLabel = document.createElement('label');
+    phoneLabel.textContent = 'Телефон (+49)';
+    const phoneInputRow = document.createElement('div');
+    phoneInputRow.className = 'account-field-row';
+    const phoneInput = document.createElement('input');
+    phoneInput.className = 'account-value';
+    phoneInput.placeholder = '+49... (номер SMS)';
+    phoneInput.value = d.phone || '';
+    phoneInput.onchange = () => {
+      if(!accountData[account.email]) accountData[account.email] = {};
+      accountData[account.email].phone = phoneInput.value.trim();
+      saveAccountData();
+      renderFilters();
+    };
+    const phoneCopy = document.createElement('button');
+    phoneCopy.type = 'button';
+    phoneCopy.textContent = 'Копия';
+    phoneCopy.onclick = () => {
+      if(phoneInput.value) copyValue(phoneInput.value, 'Телефон');
+    };
+    phoneInputRow.append(phoneInput, phoneCopy);
+    phoneRow.append(phoneLabel, phoneInputRow);
+    card.append(phoneRow);
+
+    // Ad ID
+    const adRow = document.createElement('div');
+    adRow.className = 'account-field';
+    const adLabel = document.createElement('label');
+    adLabel.textContent = 'Ad ID (Номер объявления)';
+    const adInputRow = document.createElement('div');
+    adInputRow.className = 'account-field-row';
+    const adInput = document.createElement('input');
+    adInput.className = 'account-value';
+    adInput.placeholder = 'например 3562005629';
+    adInput.value = d.adId || '';
+    adInput.onchange = () => {
+      if(!accountData[account.email]) accountData[account.email] = {};
+      accountData[account.email].adId = adInput.value.trim();
+      saveAccountData();
+      renderFilters();
+    };
+    const adCopy = document.createElement('button');
+    adCopy.type = 'button';
+    adCopy.textContent = 'Копия';
+    adCopy.onclick = () => {
+      if(adInput.value) copyValue(adInput.value, 'Ad ID');
+    };
+    adInputRow.append(adInput, adCopy);
+    adRow.append(adLabel, adInputRow);
+    card.append(adRow);
+
+    // Заметка
+    const noteRow = document.createElement('div');
+    noteRow.className = 'account-field';
+    const noteLabel = document.createElement('label');
+    noteLabel.textContent = 'Заметка / Товар прогрева';
+    const noteArea = document.createElement('textarea');
+    noteArea.className = 'account-note';
+    noteArea.placeholder = 'Название товара, город, статус модерации…';
+    noteArea.value = d.note || '';
+    noteArea.onchange = () => {
+      if(!accountData[account.email]) accountData[account.email] = {};
+      accountData[account.email].note = noteArea.value.trim();
+      saveAccountData();
+    };
+    noteRow.append(noteLabel, noteArea);
+    card.append(noteRow);
+
+    // Скопировать строку
+    const copyAll = document.createElement('button');
+    copyAll.type = 'button';
+    copyAll.className = 'account-copy-all';
+    copyAll.textContent = 'Копировать всю строку аккаунта';
+    copyAll.onclick = () => {
+      const full = `${account.name}:${account.birthday}:${account.email}:${account.password}` +
+                   (d.phone ? `:${d.phone}` : '') +
+                   (d.adId ? `:AdID:${d.adId}` : '') +
+                   (d.status ? `:СТАТУС:${stInfo.label}` : '');
+      copyValue(full, 'Вся строка аккаунта');
+    };
+    card.append(copyAll);
+
+    accountGrid.append(card);
+  });
+
+  if(!filtered.length){
+    const empty = document.createElement('p');
+    empty.className = 'empty account-empty';
+    empty.textContent = 'Аккаунты не найдены. Попробуй сбросить фильтр или поисковую строку.';
+    accountGrid.append(empty);
+  }
+}
+
+function createFieldRow(label, val, type, hasCopy, isPass=false){
+  const field = document.createElement('div');
+  field.className = 'account-field';
+  const title = document.createElement('label');
+  title.textContent = label;
+  
+  const row = document.createElement('div');
+  row.className = 'account-field-row';
+  
+  const inp = document.createElement('input');
+  inp.className = 'account-value';
+  inp.value = val;
+  inp.readOnly = true;
+  inp.type = isPass ? 'password' : 'text';
+  row.append(inp);
+
+  if(isPass){
+    const rev = document.createElement('button');
+    rev.type = 'button';
+    rev.textContent = '👁';
+    rev.title = 'Показать / скрыть пароль';
+    rev.onclick = () => {
+      const isP = (inp.type === 'password');
+      inp.type = isP ? 'text' : 'password';
+    };
+    row.append(rev);
+  }
+
+  if(hasCopy){
+    const c = document.createElement('button');
+    c.type = 'button';
+    c.textContent = 'Копия';
+    c.onclick = () => copyValue(val, label);
+    row.append(c);
+  }
+
+  field.append(title, row);
+  return field;
+}
+
+const planTab = document.getElementById('plan-tab');
+const accountsTab = document.getElementById('accounts-tab');
+
+function selectTab(tab, remember=true){
+  const isAcc = (tab === 'accounts');
+  document.getElementById('plan-panel').hidden = isAcc;
+  document.getElementById('accounts-panel').hidden = !isAcc;
+  document.getElementById('add').hidden = isAcc;
+
+  planTab.setAttribute('aria-selected', String(!isAcc));
+  accountsTab.setAttribute('aria-selected', String(isAcc));
+  planTab.tabIndex = isAcc ? -1 : 0;
+  accountsTab.tabIndex = isAcc ? 0 : -1;
+
+  if(isAcc) {
+    renderFilters();
+    renderAccounts();
+  } else {
+    renderTasks();
+  }
+
+  if(remember){
+    try { localStorage.setItem('vadim-personal-plan-active-tab', isAcc ? 'accounts' : 'plan'); } catch(e){}
+  }
+}
+
+planTab.onclick = () => selectTab('plan');
+accountsTab.onclick = () => selectTab('accounts');
+accountSearch.oninput = renderAccounts;
+
+document.getElementById('export').onclick = () => {
+  const exportPayload = {
+    version: '3.0',
+    date: new Date().toISOString(),
+    tasks: tasks,
+    accountsData: accountData
+  };
+  const blob = new Blob([JSON.stringify(exportPayload, null, 2)], { type:'application/json;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `План_и_Аккаунты_${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(url), 1000);
+};
+
+document.getElementById('import').onclick = () => document.getElementById('import-file').click();
+document.getElementById('import-file').onchange = async e => {
+  const file = e.target.files[0];
+  if(!file) return;
+  try {
+    const data = JSON.parse(await file.text());
+    if(confirm('Импортировать данные из файла?')){
+      if(Array.isArray(data)){
+        tasks = data;
+      } else if(data.tasks){
+        tasks = data.tasks;
+        if(data.accountsData) accountData = data.accountsData;
+      }
+      saveTasks();
+      saveAccountData();
+      renderTasks();
+      renderFilters();
+      renderAccounts();
+      showCopyMessage('Импорт успешно завершен!');
+    }
+  } catch(err){
+    alert('Не удалось прочитать файл JSON.');
+  } finally {
+    e.target.value = '';
+  }
+};
+
+document.getElementById('reset-accounts-btn').onclick = () => {
+  if(confirm('Сбросить статусы и заметки всех аккаунтов к начальным?')){
+    localStorage.removeItem(keyAccDetails);
+    accountData = {};
+    renderFilters();
+    renderAccounts();
+    showCopyMessage('Данные аккаунтов сброшены.');
+  }
+};
+
+setInterval(() => {
+  if(!accountsTab.hasAttribute('hidden') && activeFilter !== 'plan'){
+    renderAccounts();
+  }
+}, 60000);
+
+</script>
+</body>
+</html>
